@@ -11,6 +11,6 @@ namespace Doug.Models
         public int Id { get; set; }
         public string ChannelId { get; set; }
         public BotStateMachine StateMachine { get; set; }
-        public List<User> Participants { get; set; }
+        public CoffeeBreak CoffeeBreak { get; set; }
     }
 }

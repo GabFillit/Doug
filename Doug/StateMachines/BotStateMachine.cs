@@ -34,20 +34,18 @@ namespace Doug.StateMachines
         private StateMachine<State, Event>.TriggerWithParameters<User> CoffeeEmojiEvent;
         private StateMachine<State, Event>.TriggerWithParameters<User> SkipCommandEvent;
 
-        private TimeService TimeService;
         private MessagingService MessagingService;
-        private readonly List<User> Participants;
+        private readonly CoffeeBreak CoffeeBreak;
 
         private List<User> Roster;
         private List<User> AvailableParticipants;
 
-        public BotStateMachine(TimeService timeService, MessagingService messagingService, List<User> participants)
+        public BotStateMachine(CoffeeBreak coffeeBreak, MessagingService messagingService)
         {
-            this.TimeService = timeService;
             this.MessagingService = messagingService;
-            this.Participants = participants;
+            this.CoffeeBreak = coffeeBreak;
             this.Roster = new List<User>();
-            this.AvailableParticipants = new List<User>(participants);
+            this.AvailableParticipants = new List<User>(coffeeBreak.Participants);
 
 
             this.Machine = new StateMachine<State, Event>(State.Idle);
@@ -82,27 +80,36 @@ namespace Doug.StateMachines
             Machine.Fire(Event.CoffeeRemindTimeout);
         }
 
+        public void EndBreak()
+        {
+            Machine.Fire(Event.CoffeeBreakEnd);
+        }
+
         private void ConfigureStateMachine()
         {
             Machine.Configure(State.Idle)
-                .PermitIf(CoffeeEmojiEvent, State.CoffeeBreakBuilding, userId => TimeService.IsCoffeeTime(TimeZoneInfo.Local))
-                .IgnoreIf(CoffeeEmojiEvent, userId => !TimeService.IsCoffeeTime(TimeZoneInfo.Local));
+                .PermitIf(CoffeeEmojiEvent, State.CoffeeBreakBuilding, userId => CoffeeBreak.IsCoffeeTime(TimeZoneInfo.Local))
+                .IgnoreIf(CoffeeEmojiEvent, userId => !CoffeeBreak.IsCoffeeTime(TimeZoneInfo.Local));
 
             Machine.Configure(State.CoffeeBreakBuilding)
-                .OnEntry(() => TimeService.Timeout(30000, Remind))
+                .OnEntry(() => CoffeeBreak.RemindTimeoutStart(Remind))
                 .OnEntryFrom(CoffeeEmojiEvent, CountParticipant)
-                .PermitReentryIf(CoffeeEmojiEvent, userId => true)
+                .PermitReentry(Event.CoffeeEmoji)
                 .Permit(Event.CoffeeRemindTimeout, State.CoffeeRemind)
                 .Permit(Event.CoffeeCancel, State.Idle)
                 .Permit(Event.CoffeePostpone, State.CoffeePostponed)
                 .Permit(Event.CoffeeResolve, State.CoffeeBreak)
                 .InternalTransition(SkipCommandEvent, (user, t) => OnSkip(user))
-                .OnExit(TimeService.CancelTimeout);
+                .OnExit(CoffeeBreak.CancelRemindTimeout);
 
             Machine.Configure(State.CoffeeRemind)
                 .OnEntry(SendCalloutMessage)
                 .Permit(Event.CoffeeEmoji, State.CoffeeBreakBuilding)
                 .Permit(Event.CoffeeResolve, State.CoffeeBreak);
+
+            Machine.Configure(State.CoffeeBreak)
+                .OnEntry(() => CoffeeBreak.CoffeeBreakStart(EndBreak))
+                .Permit(Event.CoffeeBreakEnd, State.Idle);
         }
 
         private void CountParticipant(User participant)

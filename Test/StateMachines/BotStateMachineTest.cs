@@ -132,7 +132,7 @@ namespace Test.StateMachines
         }
 
         [TestMethod]
-        public void GivenUnreadyParticipantsAndOneReady_WhenTimeout_ThenSendRemindMessage()
+        public void GivenUnreadyParticipantsAndOneReady_WhenTimeout_ThenGoInRemindState()
         {
             CreateStateMachine();
             BotStateMachine.CoffeeEmoji(MONIQUE);
@@ -140,8 +140,18 @@ namespace Test.StateMachines
             TimeServiceMock.Verify(timeService => timeService.Timeout(It.IsAny<int>(), It.IsAny<Action>()));
             BotStateMachine.Remind();
 
-            MessagingServiceMock.Verify(messageService => messageService.SendMessage(It.IsAny<Message>()));
             Assert.AreEqual(BotStateMachine.State.CoffeeRemind, BotStateMachine.GetCurrentState());
+        }
+
+        [TestMethod]
+        public void GivenReminding_WhenEnter_ThenSendRemindMessage()
+        {
+            CreateStateMachine();
+            BotStateMachine.CoffeeEmoji(MONIQUE);
+
+            BotStateMachine.Remind();
+
+            MessagingServiceMock.Verify(messageService => messageService.SendMessage(It.IsAny<Message>()));
         }
 
         [TestMethod]

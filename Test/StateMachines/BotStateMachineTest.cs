@@ -112,5 +112,17 @@ namespace Test.StateMachines
 
             Assert.AreEqual(BotStateMachine.State.CoffeeBreak, BotStateMachine.GetCurrentState());
         }
+
+        [TestMethod]
+        public void GivenUnreadyParticipants_WhenResolve_ThenItsCoffeeBreak()
+        {
+            participants.Add(ROBERT);
+            BotStateMachine = new BotStateMachine(TimeServiceMock.Object, participants);
+            BotStateMachine.CoffeeEmoji(MONIQUE);
+
+            BotStateMachine.Resolve();
+
+            Assert.AreEqual(BotStateMachine.State.CoffeeBreak, BotStateMachine.GetCurrentState());
+        }
     }
 }

@@ -70,6 +70,11 @@ namespace Doug.StateMachines
             Machine.Fire(SkipCommandEvent, user);
         }
 
+        public void Resolve()
+        {
+            Machine.Fire(Event.CoffeeResolve);
+        }
+
         private void ConfigureStateMachine()
         {
             Machine.Configure(State.Idle)

@@ -178,5 +178,17 @@ namespace Test.StateMachines
 
             Assert.AreEqual(BotStateMachine.State.CoffeeBreak, BotStateMachine.GetCurrentState());
         }
+
+        [TestMethod]
+        public void GivenReminding_WhenResolving_ThenGoInCoffeeBreak()
+        {
+            CreateStateMachine();
+            BotStateMachine.CoffeeEmoji(MONIQUE);
+            BotStateMachine.Remind();
+
+            BotStateMachine.Resolve();
+
+            Assert.AreEqual(BotStateMachine.State.CoffeeBreak, BotStateMachine.GetCurrentState());
+        }
     }
 }

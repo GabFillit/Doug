@@ -101,7 +101,8 @@ namespace Doug.StateMachines
 
             Machine.Configure(State.CoffeeRemind)
                 .OnEntry(SendCalloutMessage)
-                .Permit(Event.CoffeeEmoji, State.CoffeeBreakBuilding);
+                .Permit(Event.CoffeeEmoji, State.CoffeeBreakBuilding)
+                .Permit(Event.CoffeeResolve, State.CoffeeBreak);
         }
 
         private void CountParticipant(User participant)

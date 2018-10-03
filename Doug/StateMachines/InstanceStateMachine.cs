@@ -7,10 +7,10 @@ using static Doug.StateMachines.BotStateMachine;
 
 namespace Doug.StateMachines
 {
-    interface InstanceStateMachine
+    public interface InstanceStateMachine
     {
         void CoffeeEmoji(User participant);
-
-        State GetCurrentState();
+        void Skip(User user);
+        void Resolve();
     }
 }

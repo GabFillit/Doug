@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace Doug.Services
 {
-    interface MessagingService
+    public interface MessagingService
     {
         MessageSlur GetSlurById(string id);
 
-        void SendMessage(string conversationId);
+        void SendMessage(Message message);
 
         void AddVoteReactionsToMessage(string messageId);
     }

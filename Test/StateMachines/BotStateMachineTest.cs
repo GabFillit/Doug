@@ -15,6 +15,7 @@ namespace Test.StateMachines
         private BotStateMachine BotStateMachine;
 
         private Mock<TimeService> TimeServiceMock = new Mock<TimeService>();
+        private Mock<MessagingService> MessagingServiceMock = new Mock<MessagingService>();
         private List<User> participants;
 
         private readonly User BOB = new User("12hd89dj20m13");
@@ -30,17 +31,22 @@ namespace Test.StateMachines
             TimeServiceMock.Setup(timer => timer.IsCoffeeTime(It.IsAny<TimeZoneInfo>())).Returns(true);
         }
 
+        private void CreateStateMachine()
+        {
+            BotStateMachine = new BotStateMachine(TimeServiceMock.Object, MessagingServiceMock.Object, participants);
+        }
+
         [TestMethod]
         public void WhenCreatingStateMachine_ThenIsInIdleState()
         {
-            BotStateMachine = new BotStateMachine(TimeServiceMock.Object, participants);
+            CreateStateMachine();
             Assert.AreEqual(BotStateMachine.State.Idle, BotStateMachine.GetCurrentState());
         }
 
         [TestMethod]
         public void GivenValidTime_WhenMachineReceiveCoffeeEmoji_ThenItGoesInCoffeeBuilding()
         {
-            BotStateMachine = new BotStateMachine(TimeServiceMock.Object, participants);
+            CreateStateMachine();
 
             BotStateMachine.CoffeeEmoji(BOB);
             Assert.AreEqual(BotStateMachine.State.CoffeeBreakBuilding, BotStateMachine.GetCurrentState());
@@ -50,7 +56,7 @@ namespace Test.StateMachines
         public void GivenInvalidTime_WhenMachineReceiveCoffeeEmoji_ThenItStayIdle()
         {
             TimeServiceMock.Setup(timer => timer.IsCoffeeTime(It.IsAny<TimeZoneInfo>())).Returns(false);
-            BotStateMachine = new BotStateMachine(TimeServiceMock.Object, participants);
+            CreateStateMachine();
 
             BotStateMachine.CoffeeEmoji(BOB);
             Assert.AreEqual(BotStateMachine.State.Idle, BotStateMachine.GetCurrentState());
@@ -61,7 +67,7 @@ namespace Test.StateMachines
         {
             participants = new List<User>();
             participants.Add(BOB);
-            BotStateMachine = new BotStateMachine(TimeServiceMock.Object, participants);
+            CreateStateMachine();
 
             BotStateMachine.CoffeeEmoji(BOB);
             Assert.AreEqual(BotStateMachine.State.CoffeeBreak, BotStateMachine.GetCurrentState());
@@ -70,7 +76,7 @@ namespace Test.StateMachines
         [TestMethod]
         public void GivenTwoParticipants_WhenMachineReceiveOneReady_ThenItStayInCoffeeBuilding()
         {
-            BotStateMachine = new BotStateMachine(TimeServiceMock.Object, participants);
+            CreateStateMachine();
 
             BotStateMachine.CoffeeEmoji(BOB);
             Assert.AreEqual(BotStateMachine.State.CoffeeBreakBuilding, BotStateMachine.GetCurrentState());
@@ -79,7 +85,7 @@ namespace Test.StateMachines
         [TestMethod]
         public void GivenTwoParticipants_WhenMachineReceiveTwoReady_ThenItsCoffeeBreak()
         {
-            BotStateMachine = new BotStateMachine(TimeServiceMock.Object, participants);
+            CreateStateMachine();
 
             BotStateMachine.CoffeeEmoji(BOB);
             BotStateMachine.CoffeeEmoji(MONIQUE);
@@ -89,7 +95,7 @@ namespace Test.StateMachines
         [TestMethod]
         public void GivenTwoParticipantsAndOneReady_WhenSkippingOne_ThenItsCoffeeBreak()
         {
-            BotStateMachine = new BotStateMachine(TimeServiceMock.Object, participants);
+            CreateStateMachine();
 
             BotStateMachine.CoffeeEmoji(MONIQUE);
             BotStateMachine.Skip(BOB);
@@ -101,7 +107,7 @@ namespace Test.StateMachines
         public void GivenMultipleParticipantsAndTwoReady_WhenSkippingOneMultipleTime_ThenItsCoffeeBreak()
         {
             participants.Add(ROBERT);
-            BotStateMachine = new BotStateMachine(TimeServiceMock.Object, participants);
+            CreateStateMachine();
 
             BotStateMachine.CoffeeEmoji(MONIQUE);
             BotStateMachine.Skip(BOB);
@@ -117,11 +123,23 @@ namespace Test.StateMachines
         public void GivenUnreadyParticipants_WhenResolve_ThenItsCoffeeBreak()
         {
             participants.Add(ROBERT);
-            BotStateMachine = new BotStateMachine(TimeServiceMock.Object, participants);
+            CreateStateMachine();
             BotStateMachine.CoffeeEmoji(MONIQUE);
 
             BotStateMachine.Resolve();
 
+            Assert.AreEqual(BotStateMachine.State.CoffeeBreak, BotStateMachine.GetCurrentState());
+        }
+
+        [TestMethod]
+        public void GivenUnreadyParticipantsAndOneReady_WhenTimeout_ThenSendRemindMessage()
+        {
+            CreateStateMachine();
+            BotStateMachine.CoffeeEmoji(MONIQUE);
+
+            TimeServiceMock.Verify(timeService => timeService.CoffeeRemindTimeout(It.IsAny<InstanceStateMachine>()));
+
+            MessagingServiceMock.Verify(messageService => messageService.SendMessage(It.IsAny<Message>()));
             Assert.AreEqual(BotStateMachine.State.CoffeeBreak, BotStateMachine.GetCurrentState());
         }
     }

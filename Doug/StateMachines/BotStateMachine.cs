@@ -35,14 +35,16 @@ namespace Doug.StateMachines
         private StateMachine<State, Event>.TriggerWithParameters<User> SkipCommandEvent;
 
         private TimeService TimeService;
+        private MessagingService MessagingService;
         private readonly List<User> Participants;
 
         private List<User> Roster;
         private List<User> AvailableParticipants;
 
-        public BotStateMachine(TimeService timeService, List<User> participants)
+        public BotStateMachine(TimeService timeService, MessagingService messagingService, List<User> participants)
         {
             this.TimeService = timeService;
+            this.MessagingService = messagingService;
             this.Participants = participants;
             this.Roster = new List<User>();
             this.AvailableParticipants = new List<User>(participants);
@@ -82,13 +84,18 @@ namespace Doug.StateMachines
                 .IgnoreIf(CoffeeEmojiEvent, userId => !TimeService.IsCoffeeTime(TimeZoneInfo.Local));
 
             Machine.Configure(State.CoffeeBreakBuilding)
+                .OnEntry(() => TimeService.CoffeeRemindTimeout(this))
                 .OnEntryFrom(CoffeeEmojiEvent, CountParticipant)
                 .PermitReentryIf(CoffeeEmojiEvent, userId => true)
                 .Permit(Event.CoffeeRemindTimeout, State.CoffeeRemind)
                 .Permit(Event.CoffeeCancel, State.Idle)
                 .Permit(Event.CoffeePostpone, State.CoffeePostponed)
                 .Permit(Event.CoffeeResolve, State.CoffeeBreak)
-                .InternalTransition(SkipCommandEvent, (user, t) => OnSkip(user));
+                .InternalTransition(SkipCommandEvent, (user, t) => OnSkip(user))
+                .OnExit(TimeService.CancelCoffeeRemindTimeout);
+
+            Machine.Configure(State.CoffeeRemind)
+                .OnEntry(SendCalloutMessage);
         }
 
         private void CountParticipant(User participant)
@@ -112,6 +119,14 @@ namespace Doug.StateMachines
             AvailableParticipants.Remove(user);
 
             if (IsEveryoneReady()) Machine.Fire(Event.CoffeeResolve);
+        }
+
+        private void SendCalloutMessage()
+        {
+            var message = new Message();
+            message.ConversationId = "123123112";
+            message.Text = "missing 3 bad bois";
+            MessagingService.SendMessage(message);
         }
     }
 }

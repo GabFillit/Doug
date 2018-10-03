@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Doug.Models
 {
-    public class MessageSlur : Slur
+    public class MessageSlur : Message
     {
         public int Score { get; set; }
     }

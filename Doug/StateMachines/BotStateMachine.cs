@@ -32,6 +32,8 @@ namespace Doug.StateMachines
 
         private StateMachine<State, Event> Machine;
         private StateMachine<State, Event>.TriggerWithParameters<User> CoffeeEmojiEvent;
+        private StateMachine<State, Event>.TriggerWithParameters<User> SkipCommandEvent;
+
         private TimeService TimeService;
         private readonly List<User> Participants;
 
@@ -48,6 +50,7 @@ namespace Doug.StateMachines
 
             this.Machine = new StateMachine<State, Event>(State.Idle);
             this.CoffeeEmojiEvent = Machine.SetTriggerParameters<User>(Event.CoffeeEmoji);
+            this.SkipCommandEvent = Machine.SetTriggerParameters<User>(Event.SkipCommand);
 
             ConfigureStateMachine();
         }
@@ -60,6 +63,11 @@ namespace Doug.StateMachines
         public State GetCurrentState()
         {
             return Machine.State;
+        }
+
+        public void Skip(User user)
+        {
+            Machine.Fire(SkipCommandEvent, user);
         }
 
         private void ConfigureStateMachine()
@@ -75,7 +83,7 @@ namespace Doug.StateMachines
                 .Permit(Event.CoffeeCancel, State.Idle)
                 .Permit(Event.CoffeePostpone, State.CoffeePostponed)
                 .Permit(Event.CoffeeResolve, State.CoffeeBreak)
-                .InternalTransition(Event.SkipCommand, OnSkip);
+                .InternalTransition(SkipCommandEvent, (user, t) => OnSkip(user));
         }
 
         private void CountParticipant(User participant)
@@ -86,10 +94,7 @@ namespace Doug.StateMachines
                 Roster.Add(participant);
             }
 
-            if (IsEveryoneReady())
-            {
-                Machine.Fire(Event.CoffeeResolve);
-            }
+            if (IsEveryoneReady()) Machine.Fire(Event.CoffeeResolve);
         }
 
         private bool IsEveryoneReady()
@@ -97,9 +102,11 @@ namespace Doug.StateMachines
             return AvailableParticipants.All(user => Roster.Any(participant => participant == user));
         }
 
-        private void OnSkip()
+        private void OnSkip(User user)
         {
+            AvailableParticipants.Remove(user);
 
+            if (IsEveryoneReady()) Machine.Fire(Event.CoffeeResolve);
         }
     }
 }

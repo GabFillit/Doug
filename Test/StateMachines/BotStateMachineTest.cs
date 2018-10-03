@@ -19,6 +19,7 @@ namespace Test.StateMachines
 
         private readonly User BOB = new User("12hd89dj20m13");
         private readonly User MONIQUE = new User("as8120d1d0918dh");
+        private readonly User ROBERT = new User("dj8d8723d98d");
 
         [TestInitialize]
         public void Setup()
@@ -73,6 +74,43 @@ namespace Test.StateMachines
 
             BotStateMachine.CoffeeEmoji(BOB);
             Assert.AreEqual(BotStateMachine.State.CoffeeBreakBuilding, BotStateMachine.GetCurrentState());
+        }
+
+        [TestMethod]
+        public void GivenTwoParticipants_WhenMachineReceiveTwoReady_ThenItsCoffeeBreak()
+        {
+            BotStateMachine = new BotStateMachine(TimeServiceMock.Object, participants);
+
+            BotStateMachine.CoffeeEmoji(BOB);
+            BotStateMachine.CoffeeEmoji(MONIQUE);
+            Assert.AreEqual(BotStateMachine.State.CoffeeBreak, BotStateMachine.GetCurrentState());
+        }
+
+        [TestMethod]
+        public void GivenTwoParticipantsAndOneReady_WhenSkippingOne_ThenItsCoffeeBreak()
+        {
+            BotStateMachine = new BotStateMachine(TimeServiceMock.Object, participants);
+
+            BotStateMachine.CoffeeEmoji(MONIQUE);
+            BotStateMachine.Skip(BOB);
+
+            Assert.AreEqual(BotStateMachine.State.CoffeeBreak, BotStateMachine.GetCurrentState());
+        }
+
+        [TestMethod]
+        public void GivenMultipleParticipantsAndTwoReady_WhenSkippingOneMultipleTime_ThenItsCoffeeBreak()
+        {
+            participants.Add(ROBERT);
+            BotStateMachine = new BotStateMachine(TimeServiceMock.Object, participants);
+
+            BotStateMachine.CoffeeEmoji(MONIQUE);
+            BotStateMachine.Skip(BOB);
+            BotStateMachine.Skip(BOB);
+            BotStateMachine.Skip(BOB);
+            BotStateMachine.Skip(BOB);
+            BotStateMachine.CoffeeEmoji(ROBERT);
+
+            Assert.AreEqual(BotStateMachine.State.CoffeeBreak, BotStateMachine.GetCurrentState());
         }
     }
 }

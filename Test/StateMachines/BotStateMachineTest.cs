@@ -144,6 +144,16 @@ namespace Test.StateMachines
         }
 
         [TestMethod]
+        public void GivenBuilding_WhenCoffeeEmoji_ThenTimerStop()
+        {
+            CreateStateMachine();
+            BotStateMachine.CoffeeEmoji(MONIQUE);
+            BotStateMachine.CoffeeEmoji(BOB);
+
+            CoffeeBreakMock.Verify(coffeeBreak => coffeeBreak.CancelRemindTimeout());
+        }
+
+        [TestMethod]
         public void GivenUnreadyParticipantsAndOneReady_WhenTimeout_ThenGoInRemindState()
         {
             CreateStateMachine();

@@ -77,6 +77,11 @@ namespace Doug.StateMachines
             Machine.Fire(Event.CoffeeResolve);
         }
 
+        public void Remind()
+        {
+            Machine.Fire(Event.CoffeeRemindTimeout);
+        }
+
         private void ConfigureStateMachine()
         {
             Machine.Configure(State.Idle)
@@ -84,7 +89,7 @@ namespace Doug.StateMachines
                 .IgnoreIf(CoffeeEmojiEvent, userId => !TimeService.IsCoffeeTime(TimeZoneInfo.Local));
 
             Machine.Configure(State.CoffeeBreakBuilding)
-                .OnEntry(() => TimeService.CoffeeRemindTimeout(this))
+                .OnEntry(() => TimeService.Timeout(30000, Remind))
                 .OnEntryFrom(CoffeeEmojiEvent, CountParticipant)
                 .PermitReentryIf(CoffeeEmojiEvent, userId => true)
                 .Permit(Event.CoffeeRemindTimeout, State.CoffeeRemind)
@@ -92,7 +97,7 @@ namespace Doug.StateMachines
                 .Permit(Event.CoffeePostpone, State.CoffeePostponed)
                 .Permit(Event.CoffeeResolve, State.CoffeeBreak)
                 .InternalTransition(SkipCommandEvent, (user, t) => OnSkip(user))
-                .OnExit(TimeService.CancelCoffeeRemindTimeout);
+                .OnExit(TimeService.CancelTimeout);
 
             Machine.Configure(State.CoffeeRemind)
                 .OnEntry(SendCalloutMessage);

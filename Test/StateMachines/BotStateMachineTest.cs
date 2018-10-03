@@ -137,10 +137,11 @@ namespace Test.StateMachines
             CreateStateMachine();
             BotStateMachine.CoffeeEmoji(MONIQUE);
 
-            TimeServiceMock.Verify(timeService => timeService.CoffeeRemindTimeout(It.IsAny<InstanceStateMachine>()));
+            TimeServiceMock.Verify(timeService => timeService.Timeout(It.IsAny<int>(), It.IsAny<Action>()));
+            BotStateMachine.Remind();
 
             MessagingServiceMock.Verify(messageService => messageService.SendMessage(It.IsAny<Message>()));
-            Assert.AreEqual(BotStateMachine.State.CoffeeBreak, BotStateMachine.GetCurrentState());
+            Assert.AreEqual(BotStateMachine.State.CoffeeRemind, BotStateMachine.GetCurrentState());
         }
     }
 }

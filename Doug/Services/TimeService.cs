@@ -10,7 +10,7 @@ namespace Doug.Services
     {
         bool IsCoffeeTime(TimeZoneInfo timezone);
 
-        Task CoffeeRemindTimeout(InstanceStateMachine machine);
-        void CancelCoffeeRemindTimeout();
+        void Timeout(int ms, Action action);
+        void CancelTimeout();
     }
 }

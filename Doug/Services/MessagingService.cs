@@ -8,7 +8,7 @@ namespace Doug.Services
 {
     public interface MessagingService
     {
-        MessageSlur GetSlurById(string id);
+        Message GetMessageById(string id);
 
         void SendMessage(Message message);
 

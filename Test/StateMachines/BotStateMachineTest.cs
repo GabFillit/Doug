@@ -143,5 +143,30 @@ namespace Test.StateMachines
             MessagingServiceMock.Verify(messageService => messageService.SendMessage(It.IsAny<Message>()));
             Assert.AreEqual(BotStateMachine.State.CoffeeRemind, BotStateMachine.GetCurrentState());
         }
+
+        [TestMethod]
+        public void GivenReminding_WhenCoffeeEmoji_ThenGoInCoffeeBuilding()
+        {
+            participants.Add(ROBERT);
+            CreateStateMachine();
+            BotStateMachine.CoffeeEmoji(MONIQUE);
+            BotStateMachine.Remind();
+
+            BotStateMachine.CoffeeEmoji(BOB);
+
+            Assert.AreEqual(BotStateMachine.State.CoffeeBreakBuilding, BotStateMachine.GetCurrentState());
+        }
+
+        [TestMethod]
+        public void GivenRemindingLastParticipant_WhenLastParticipantDoesCoffeeEmoji_ThenGoInCoffeeBreak()
+        {
+            CreateStateMachine();
+            BotStateMachine.CoffeeEmoji(MONIQUE);
+            BotStateMachine.Remind();
+
+            BotStateMachine.CoffeeEmoji(BOB);
+
+            Assert.AreEqual(BotStateMachine.State.CoffeeBreak, BotStateMachine.GetCurrentState());
+        }
     }
 }
